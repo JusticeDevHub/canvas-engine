@@ -12,20 +12,21 @@ class CanvasEngine {
     const canvasItem = document.getElementById(canvasId);
     if (canvasItem === null) {
       alert(`No HTML Element with id ${canvasId} Found on CanvasEngine Init`);
-      return;
     }
 
-    canvasItem.style.overflow = "hidden";
-    if (canvasItem.style.position === "") {
-      canvasItem.style.position = "relative";
+    if (canvasItem) {
+      canvasItem.style.overflow = "hidden";
+      if (canvasItem.style.position === "") {
+        canvasItem.style.position = "relative";
+      }
+      this.#canvas = document.createElement("div") as HTMLElement;
+      this.#canvas.style.position = "absolute";
+      this.#canvas.style.width = "100%";
+      this.#canvas.style.height = "100%";
+      this.#canvas.style.left = "50%";
+      this.#canvas.style.top = "50%";
+      canvasItem.appendChild(this.#canvas);
     }
-    this.#canvas = document.createElement("div") as HTMLElement;
-    this.#canvas.style.position = "absolute";
-    this.#canvas.style.width = "100%";
-    this.#canvas.style.height = "100%";
-    this.#canvas.style.left = "50%";
-    this.#canvas.style.top = "50%";
-    canvasItem.appendChild(this.#canvas);
 
     this.#camera = new CanvasObject(
       `camera-${Math.random()}.replace("0.", "")`,
@@ -66,7 +67,7 @@ class CanvasEngine {
     return this.#camera;
   };
 
-  destroy = () => {
+  destroy = (): void => {
     this.#canvasObjects = {};
     this.#canvas?.remove();
   };

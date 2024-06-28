@@ -1,11 +1,11 @@
 import CanvasEngine from "./CanvasEngine.ts";
 
 class CanvasObject {
-  #id;
-  #HTMLElement;
-  #containerElement;
-  #document;
-  #isCamera;
+  #id: string;
+  #HTMLElement: HTMLElement;
+  #containerElement: HTMLElement;
+  #document: Document;
+  #isCamera: boolean;
   #position = { x: 0, y: 0 };
   #variables: { [key: string]: any } = {};
   #imageAnimElement: HTMLImageElement | null = null;
@@ -182,20 +182,20 @@ class CanvasObject {
     return this;
   };
 
-  getVariable = (key: string) => {
+  getVariable = (key: string): any => {
     return this.#variables[key] ?? null;
   };
 
   onMouseEnter = (func: (canvasObject: CanvasObject) => void): CanvasObject => {
-    this.#HTMLElement.removeEventListener("mouseenter", null);
-    this.#HTMLElement.addEventListener("mouseenter", (e) => {
+    this.#HTMLElement.removeEventListener("mouseenter", () => null);
+    this.#HTMLElement.addEventListener("mouseenter", () => {
       func(this);
     });
     return this;
   };
 
   onMouseLeave = (func: (canvasObject: CanvasObject) => void): CanvasObject => {
-    this.#HTMLElement.removeEventListener("mouseleave", null);
+    this.#HTMLElement.removeEventListener("mouseleave", () => null);
     this.#HTMLElement.addEventListener("mouseleave", () => {
       func(this);
     });
@@ -205,7 +205,7 @@ class CanvasObject {
   onMouseClickGlobal = (
     func: (canvasObject: CanvasObject) => void
   ): CanvasObject => {
-    this.#document.removeEventListener("mousedown", null);
+    this.#document.removeEventListener("mousedown", () => null);
     this.#document.addEventListener("mousedown", () => {
       func(this);
     });
@@ -215,7 +215,7 @@ class CanvasObject {
   onMouseClickThis = (
     func: (canvasObject: CanvasObject) => void
   ): CanvasObject => {
-    this.#HTMLElement.removeEventListener("mousedown", null);
+    this.#HTMLElement.removeEventListener("mousedown", () => null);
     this.#HTMLElement.addEventListener("mousedown", () => {
       func(this);
     });
@@ -225,8 +225,8 @@ class CanvasObject {
   onKeyDown = (
     func: (canvasObject: CanvasObject, key: string) => void
   ): CanvasObject => {
-    this.#document.removeEventListener("keydown", null);
-    this.#document.addEventListener("keydown", (e) => {
+    this.#document.removeEventListener("keydown", () => null);
+    this.#document.addEventListener("keydown", (e: KeyboardEvent) => {
       func(this, e.key);
     });
     return this;
@@ -235,8 +235,8 @@ class CanvasObject {
   onKeyUp = (
     func: (canvasObject: CanvasObject, key: string) => void
   ): CanvasObject => {
-    this.#document.removeEventListener("keyup", null);
-    this.#document.addEventListener("keyup", (e) => {
+    this.#document.removeEventListener("keyup", () => null);
+    this.#document.addEventListener("keyup", (e: KeyboardEvent) => {
       func(this, e.key);
     });
     return this;
@@ -250,7 +250,10 @@ class CanvasObject {
     return this;
   };
 
-  getTriggers = () => {
+  getCollisionTriggers = (): Record<
+    string,
+    (_this: CanvasObject, other: CanvasObject | null) => void
+  > => {
     return this.#onCollisionTrigger;
   };
 
@@ -259,15 +262,15 @@ class CanvasObject {
     return this;
   };
 
-  getClasses = () => {
+  getClasses = (): DOMTokenList => {
     return this.#HTMLElement.classList;
   };
 
-  getId = () => {
+  getId = (): string => {
     return this.#id;
   };
 
-  destroy = () => {
+  destroy = (): void => {
     this.#containerElement.remove();
   };
 }
