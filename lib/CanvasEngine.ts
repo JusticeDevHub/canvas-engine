@@ -1,5 +1,8 @@
 import CanvasObject from "./CanvasObject.ts";
 
+/**
+ * The `CanvasEngine` function acts as the central component of this library that bridges HTML5 and game development practices. It provides abstractions for working with HTML5
+ */
 class CanvasEngine {
   #document: Document;
   #camera: CanvasObject;

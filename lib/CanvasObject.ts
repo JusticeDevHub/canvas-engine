@@ -1,6 +1,9 @@
 import CanvasEngine from "./CanvasEngine.ts";
 import { CSSProperties } from "react";
 
+/**
+ * Everything is under CanvasEngine is a CanvasObject
+ */
 class CanvasObject {
   #id: string;
   #HTMLElement: HTMLElement;
