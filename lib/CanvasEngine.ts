@@ -1,4 +1,4 @@
-import CanvasObject from "./CanvasObject";
+import CanvasObject from "./CanvasObject.ts";
 
 class CanvasEngine {
   #document: Document;

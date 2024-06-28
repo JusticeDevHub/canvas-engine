@@ -1,4 +1,4 @@
-import CanvasEngine from "./CanvasEngine";
+import CanvasEngine from "./CanvasEngine.ts";
 
 class CanvasObject {
   #id;
