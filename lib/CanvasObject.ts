@@ -1,4 +1,5 @@
 import CanvasEngine from "./CanvasEngine.ts";
+import { CSSProperties } from "react";
 
 class CanvasObject {
   #id: string;
@@ -50,11 +51,10 @@ class CanvasObject {
     this.#HTMLElement.style.width = "auto";
     this.#HTMLElement.style.height = "auto";
     this.#containerElement.appendChild(this.#HTMLElement);
-
     return this;
   }
 
-  setStyle = (style: { [key: string]: any }): CanvasObject => {
+  setStyle = (style: CSSProperties): CanvasObject => {
     Object.keys(style).forEach((styleKey, i) => {
       const value = Object.values(style)[i] as any;
 
