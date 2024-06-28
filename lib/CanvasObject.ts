@@ -56,9 +56,8 @@ class CanvasObject {
 
   setStyle = (style: CSSProperties): CanvasObject => {
     Object.keys(style).forEach((styleKey, i) => {
-      const value = Object.values(style)[i] as any;
+      let value = Object.values(style)[i] as any;
 
-      this.#HTMLElement.style[styleKey] = value;
       if (styleKey === "zIndex") {
         this.#containerElement.style.zIndex = value;
       }
@@ -68,6 +67,20 @@ class CanvasObject {
       ) {
         this.#containerElement.style.position = value;
       }
+      if (
+        styleKey.toLowerCase().includes("width") &&
+        typeof value === "number"
+      ) {
+        value = value + "px";
+      }
+      if (
+        styleKey.toLowerCase().includes("height") &&
+        typeof value === "number"
+      ) {
+        value = value + "px";
+      }
+
+      this.#HTMLElement.style[styleKey] = value;
     });
     return this;
   };
