@@ -2,7 +2,7 @@ import CanvasEngine from "./CanvasEngine.ts";
 import { CSSProperties } from "react";
 
 /**
- * Everything is under CanvasEngine is a CanvasObject
+ * CanvasObject allows you to create, configure, and store a items the fundamental object in `CanvasEngine`, which can represent characters, props, scenery, cameras and more.
  */
 class CanvasObject {
   #id: string;
