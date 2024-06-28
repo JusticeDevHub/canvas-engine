@@ -1,3 +1,3 @@
-import CanvasEngine from "./lib/canvasEngine.ts";
+import CanvasEngine from "./lib/CanvasEngine.ts";
 
 export { CanvasEngine };
