@@ -2,6 +2,22 @@ import CanvasObject from "./CanvasObject.ts";
 
 /**
  * The `CanvasEngine` function acts as the central component of this library that bridges HTML5 and game development practices. It provides abstractions for working with HTML5
+ *
+ * @example
+ * ```ts
+ * import CanvasEngine from "@web-dev-library/canvas-engine";
+ *
+ * const canvasEngine = new CanvasEngine("canvas-id", document);
+ * const player = canvasEngine.createObject("player");
+ * ```
+ *
+ * ```html
+ * <html>
+ *    <body>
+ *       <div id="canvas-id" style={{ width: `100%`, height: `100%` }}></div>
+ *    </body>
+ * </html>
+ * ```
  */
 class CanvasEngine {
   #document: Document;
