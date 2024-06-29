@@ -1,5 +1,6 @@
 {
     "name": "@web-dev-library/canvas-engine",
+    "version": "0.0.0",
     "exports": "./index.ts",
     "imports": { "react": "npm:react@^18.3.1" }
 }
