@@ -1,5 +1,4 @@
 import CanvasObject from "./CanvasObject.ts";
-import LogicObject from "./LogicObject.ts";
 
 /**
  * The `CanvasEngine` function acts as the central component of this library that bridges HTML5 and game development practices. It provides abstractions for working with HTML5
@@ -20,15 +19,13 @@ import LogicObject from "./LogicObject.ts";
  * </html>
  * ```
  */
-class CanvasEngine extends LogicObject {
+class CanvasEngine {
   #document: Document;
   #camera: CanvasObject;
   #canvas: HTMLElement | null = null;
   #canvasObjects: { [id: string]: CanvasObject } = {};
 
   constructor(canvasId: string, document: Document) {
-    super();
-
     this.#document = document;
 
     const canvasItem = document.getElementById(canvasId);

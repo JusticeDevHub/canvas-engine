@@ -1,11 +1,10 @@
 import CanvasEngine from "./CanvasEngine.ts";
-import LogicObject from "./LogicObject.ts";
 import type csstypes from "./csstypes.d.ts";
 
 /**
  * CanvasObject allows you to create, configure, and store items. It is the fundamental object in `CanvasEngine`, which can represent characters, props, scenery, cameras and more.
  */
-class CanvasObject extends LogicObject {
+class CanvasObject {
   #id: string;
   #HTMLElement: HTMLElement;
   #containerElement: HTMLElement;
@@ -15,10 +14,11 @@ class CanvasObject extends LogicObject {
   #imageAnimElement: HTMLImageElement | null = null;
   #canvasForCamera: HTMLElement | null = null;
   #canvasEngine: CanvasEngine;
-  #onCollisionTrigger: Record<
-    string,
-    (_this: CanvasObject, other: CanvasObject | null) => void
-  > = {};
+  #variables: { [key: string]: any } = {};
+  #functions: { [key: string]: (params?: any) => void } = {};
+  #onCollisionTrigger: {
+    [key: string]: (_this: CanvasObject, other: CanvasObject | null) => void;
+  } = {};
 
   constructor(
     id: string,
@@ -28,8 +28,6 @@ class CanvasObject extends LogicObject {
     isChild: boolean,
     isCamera: boolean
   ) {
-    super();
-
     this.#id = id;
     this.#canvasEngine = canvasEngine;
     this.#document = document;
@@ -264,6 +262,32 @@ class CanvasObject extends LogicObject {
     (_this: CanvasObject, other: CanvasObject | null) => void
   > => {
     return this.#onCollisionTrigger;
+  };
+
+  setVariable = (key: string, value: any): CanvasObject => {
+    this.#variables[key] = value;
+    return this;
+  };
+
+  getVariable = (key: string): any => {
+    return this.#variables[key] ?? null;
+  };
+
+  createFunction = (
+    functionName: string,
+    func: (params?: any) => void
+  ): CanvasObject => {
+    this.#functions[functionName] = func;
+    return this;
+  };
+
+  callFunction = (functionName: string, params?: any): CanvasObject => {
+    const func: ((params?: any) => void) | null = this.#functions[functionName];
+    if (!func) {
+      return this;
+    }
+    func(params);
+    return this;
   };
 
   addClass = (className: string): CanvasObject => {
