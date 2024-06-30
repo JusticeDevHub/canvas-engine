@@ -1,5 +1,5 @@
 import CanvasEngine from "./CanvasEngine.ts";
-import { CSSProperties } from "react";
+import type csstypes from "./csstypes.d.ts";
 
 /**
  * CanvasObject allows you to create, configure, and store items. It is the fundamental object in `CanvasEngine`, which can represent characters, props, scenery, cameras and more.
@@ -290,5 +290,7 @@ class CanvasObject {
     this.#containerElement.remove();
   };
 }
+
+interface CSSProperties extends csstypes.Properties<string | number> {}
 
 export default CanvasObject;

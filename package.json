@@ -1,8 +1,5 @@
 {
   "name": "@web-dev-library/canvas-engine",
-  "dependencies": {
-    "react": "^18.3.1"
-  },
   "devDependencies": {
     "@types/react-dom": "^18.3.0"
   }
