@@ -14,7 +14,7 @@ import CanvasObject from "./CanvasObject.ts";
  * ```html
  * <html>
  *    <body>
- *       <div id="canvas-id" style={{ width: `100%`, height: `100%` }}></div>
+ *       <div id="canvas-id" style={{ width: "100vw", height: "100vh" }}></div>
  *    </body>
  * </html>
  * ```
