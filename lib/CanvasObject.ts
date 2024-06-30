@@ -1,17 +1,17 @@
 import CanvasEngine from "./CanvasEngine.ts";
+import LogicObject from "./LogicObject.ts";
 import type csstypes from "./csstypes.d.ts";
 
 /**
  * CanvasObject allows you to create, configure, and store items. It is the fundamental object in `CanvasEngine`, which can represent characters, props, scenery, cameras and more.
  */
-class CanvasObject {
+class CanvasObject extends LogicObject {
   #id: string;
   #HTMLElement: HTMLElement;
   #containerElement: HTMLElement;
   #document: Document;
   #isCamera: boolean;
   #position = { x: 0, y: 0 };
-  #variables: { [key: string]: any } = {};
   #imageAnimElement: HTMLImageElement | null = null;
   #canvasForCamera: HTMLElement | null = null;
   #canvasEngine: CanvasEngine;
@@ -28,6 +28,8 @@ class CanvasObject {
     isChild: boolean,
     isCamera: boolean
   ) {
+    super();
+
     this.#id = id;
     this.#canvasEngine = canvasEngine;
     this.#document = document;
@@ -193,15 +195,6 @@ class CanvasObject {
     return childObj;
   };
 
-  setVariable = (key: string, value: any): CanvasObject => {
-    this.#variables[key] = value;
-    return this;
-  };
-
-  getVariable = (key: string): any => {
-    return this.#variables[key] ?? null;
-  };
-
   onMouseEnter = (func: (canvasObject: CanvasObject) => void): CanvasObject => {
     this.#HTMLElement.removeEventListener("mouseenter", () => null);
     this.#HTMLElement.addEventListener("mouseenter", () => {
@@ -239,7 +232,7 @@ class CanvasObject {
   };
 
   onKeyDown = (
-    func: (canvasObject: CanvasObject, key: string) => void
+    func: (_this: CanvasObject, key: string) => void
   ): CanvasObject => {
     this.#document.removeEventListener("keydown", () => null);
     this.#document.addEventListener("keydown", (e: KeyboardEvent) => {
