@@ -1,6 +1,5 @@
 import CanvasEngine from "./CanvasEngine.ts";
 import type csstypes from "./csstypes.d.ts";
-import getDistanceBetweenTwoPoints from "../utils/getDistanceBetweenTwoPoints.ts";
 import getMousePosition from "../utils/getMousePosition.ts";
 
 /**
@@ -188,7 +187,12 @@ class CanvasObject {
     };
 
     const timeTillDestination =
-      getDistanceBetweenTwoPoints(this.getPosition(), { x, y }) / speed;
+      this.#canvasEngine.utils.getDistanceBetweenTwoPoints(
+        this.getPosition().x,
+        this.getPosition().y,
+        x,
+        y
+      ) / speed;
 
     const loop = () => {
       if (this.#moveToPosition) {
@@ -229,9 +233,20 @@ class CanvasObject {
     return this.#moveToPosition;
   };
 
-  // setMoveInDirection = (direction: number, speed: number): CanvasObject => {
-  //   return this;
-  // };
+  setMoveInDirection = (
+    direction: number,
+    distance: number,
+    speed: number
+  ): CanvasObject => {
+    direction *= -1;
+    direction += 90;
+    direction *= Math.PI / 180;
+    const pos = this.getPosition();
+    pos.x = pos.x + Math.cos(direction) * distance;
+    pos.y = pos.y + Math.sin(direction) * distance;
+    this.setMoveToPosition(pos.x, pos.y, speed);
+    return this;
+  };
 
   setImage = (src: string): CanvasObject => {
     if (this.#imageAnimElement === null) {
@@ -265,10 +280,7 @@ class CanvasObject {
   };
 
   onMouseEnter = (
-    func: (
-      canvasObject: CanvasObject,
-      mousePosition: { x: number; y: number }
-    ) => void
+    func: (_this: CanvasObject, mousePosition: { x: number; y: number }) => void
   ): CanvasObject => {
     this.#HTMLElement.removeEventListener("mouseenter", () => null);
     this.#HTMLElement.addEventListener("mouseenter", (e) => {
@@ -278,10 +290,7 @@ class CanvasObject {
   };
 
   onMouseLeave = (
-    func: (
-      canvasObject: CanvasObject,
-      mousePosition: { x: number; y: number }
-    ) => void
+    func: (_this: CanvasObject, mousePosition: { x: number; y: number }) => void
   ): CanvasObject => {
     this.#HTMLElement.removeEventListener("mouseleave", () => null);
     this.#HTMLElement.addEventListener("mouseleave", (e) => {
@@ -291,10 +300,7 @@ class CanvasObject {
   };
 
   onMouseClickGlobal = (
-    func: (
-      canvasObject: CanvasObject,
-      mousePosition: { x: number; y: number }
-    ) => void
+    func: (_this: CanvasObject, mousePosition: { x: number; y: number }) => void
   ): CanvasObject => {
     this.#document.removeEventListener("mousedown", () => null);
     this.#document.addEventListener("mousedown", (e) => {
@@ -304,10 +310,7 @@ class CanvasObject {
   };
 
   onMouseClickThis = (
-    func: (
-      canvasObject: CanvasObject,
-      mousePosition: { x: number; y: number }
-    ) => void
+    func: (_this: CanvasObject, mousePosition: { x: number; y: number }) => void
   ): CanvasObject => {
     this.#HTMLElement.removeEventListener("mousedown", () => null);
     this.#HTMLElement.addEventListener("mousedown", (e) => {
@@ -317,10 +320,7 @@ class CanvasObject {
   };
 
   onMouseMove = (
-    func: (
-      canvasObject: CanvasObject,
-      mousePosition: { x: number; y: number }
-    ) => void
+    func: (_this: CanvasObject, mousePosition: { x: number; y: number }) => void
   ): CanvasObject => {
     this.#document.removeEventListener("mousemove", () => null);
     this.#document.addEventListener("mousemove", (e) => {

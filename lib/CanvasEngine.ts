@@ -1,3 +1,4 @@
+import getMousePosition from "../utils/getMousePosition.ts";
 import CanvasObject from "./CanvasObject.ts";
 
 /**
@@ -25,6 +26,7 @@ class CanvasEngine {
   #canvasId: string;
   #canvas: HTMLElement | null = null;
   #canvasObjects: { [id: string]: CanvasObject } = {};
+  #mousePosition: { x: number; y: number };
 
   constructor(canvasId: string, document: Document) {
     this.#document = document;
@@ -57,6 +59,10 @@ class CanvasEngine {
       false,
       true
     );
+
+    this.#document.addEventListener("mousemove", (e) => {
+      this.#mousePosition = getMousePosition(this, this.#document, e);
+    });
 
     return this;
   }
@@ -92,7 +98,37 @@ class CanvasEngine {
     return this.#canvasId;
   };
 
+  utils = {
+    getDistanceBetweenTwoPoints: (
+      x1: number,
+      y1: number,
+      x2: number,
+      y2: number
+    ): number => {
+      return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+    },
+    getAngleBetweenTwoPoints: (
+      fromX: number,
+      fromY: number,
+      toX: number,
+      toY: number
+    ): number => {
+      const deltaY = toX - fromX;
+      const deltaX = toY - fromY;
+      const angleInRadians = Math.atan2(deltaY, deltaX);
+      let angleInDegrees = angleInRadians * (180 / Math.PI);
+      if (angleInDegrees < 0) {
+        angleInDegrees += 360;
+      }
+      return angleInDegrees;
+    },
+    getMousePosition: (): { x: number; y: number } => {
+      return this.#mousePosition;
+    },
+  };
+
   destroy = (): void => {
+    this.#document.removeEventListener("mousemove", () => null);
     this.#canvasObjects = {};
     this.#canvas?.remove();
   };
