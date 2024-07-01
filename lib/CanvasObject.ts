@@ -11,6 +11,7 @@ class CanvasObject {
   #document: Document;
   #isCamera: boolean;
   #position = { x: 0, y: 0 };
+  #text: string | number | null;
   #imageAnimElement: HTMLImageElement | null = null;
   #canvasForCamera: HTMLElement | null = null;
   #canvasEngine: CanvasEngine;
@@ -262,6 +263,18 @@ class CanvasObject {
     (_this: CanvasObject, other: CanvasObject | null) => void
   > => {
     return this.#onCollisionTrigger;
+  };
+
+  setText = (str: string | number): CanvasObject => {
+    if (this.#text === null) {
+      this.#text = str;
+    }
+    this.#HTMLElement.innerText = `${str}`;
+    return this;
+  };
+
+  getText = () => {
+    return this.#text;
   };
 
   setVariable = (key: string, value: any): CanvasObject => {
