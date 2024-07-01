@@ -18,7 +18,7 @@ class CanvasObject {
   #variables: { [key: string]: any } = {};
   #functions: { [key: string]: (params?: any) => void } = {};
   #position: { x: number; y: number } = { x: 0, y: 0 };
-  #moveToPosition: movementType | null = null;
+  #moveToPosition: movementInterface | null = null;
   #onCollisionTrigger: {
     [key: string]: (_this: CanvasObject, other: CanvasObject | null) => void;
   } = {};
@@ -170,21 +170,22 @@ class CanvasObject {
    * @param speed pixels per second
    * @param movementType currently just linear, will add more movement types
    */
-  setMoveToPosition = (
-    x: number,
-    y: number,
-    speed: number,
-    movementType: "linear"
-  ): CanvasObject => {
+  setMoveToPosition = (x: number, y: number, speed: number): CanvasObject => {
+    if (this.#moveToPosition) {
+      cancelAnimationFrame(this.#moveToPosition.loopId);
+    }
+
     this.#moveToPosition = {
       startX: this.getPosition().x,
       startY: this.getPosition().y,
       targetX: x,
       targetY: y,
       speed,
-      movementType,
+      movementType: "linear",
       timestamp: Date.now(),
+      loopId: -1,
     };
+
     const timeTillDestination =
       getDistanceBetweenTwoPoints(this.getPosition(), { x, y }) / speed;
 
@@ -214,7 +215,10 @@ class CanvasObject {
       };
 
       this.setPosition(currentPosition.x, currentPosition.y);
-      requestAnimationFrame(loop);
+
+      if (this.#moveToPosition) {
+        this.#moveToPosition.loopId = requestAnimationFrame(loop);
+      }
     };
 
     loop();
@@ -222,7 +226,7 @@ class CanvasObject {
     return this;
   };
 
-  getMoveToPosition = (): movementType | null => {
+  getMoveToPosition = (): movementInterface | null => {
     return this.#moveToPosition;
   };
 
@@ -385,7 +389,7 @@ class CanvasObject {
 }
 
 interface CSSProperties extends csstypes.Properties<string | number> {}
-interface movementType {
+interface movementInterface {
   startX: number;
   startY: number;
   targetX: number;
@@ -393,6 +397,7 @@ interface movementType {
   speed: number;
   movementType: "linear";
   timestamp: number;
+  loopId: number;
 }
 
 export default CanvasObject;
