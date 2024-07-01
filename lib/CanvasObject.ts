@@ -1,5 +1,6 @@
 import CanvasEngine from "./CanvasEngine.ts";
 import type csstypes from "./csstypes.d.ts";
+import getDistanceBetweenTwoPoints from "../utils/getDistanceBetweenTwoPoints.ts";
 
 /**
  * CanvasObject allows you to create, configure, and store items. It is the fundamental object in `CanvasEngine`, which can represent characters, props, scenery, cameras and more.
@@ -10,13 +11,14 @@ class CanvasObject {
   #containerElement: HTMLElement;
   #document: Document;
   #isCamera: boolean;
-  #position = { x: 0, y: 0 };
   #text: string | number | null;
   #imageAnimElement: HTMLImageElement | null = null;
   #canvasForCamera: HTMLElement | null = null;
   #canvasEngine: CanvasEngine;
   #variables: { [key: string]: any } = {};
   #functions: { [key: string]: (params?: any) => void } = {};
+  #position: { x: number; y: number } = { x: 0, y: 0 };
+  #moveToPosition: movementType | null = null;
   #onCollisionTrigger: {
     [key: string]: (_this: CanvasObject, other: CanvasObject | null) => void;
   } = {};
@@ -161,6 +163,67 @@ class CanvasObject {
 
   getPosition = (): { x: number; y: number } => {
     return { ...this.#position };
+  };
+
+  /**
+   *
+   * @param speed pixels per second
+   * @param movementType currently just linear, will add more movement types
+   */
+  setMoveToPosition = (
+    x: number,
+    y: number,
+    speed: number,
+    movementType: "linear"
+  ): CanvasObject => {
+    this.#moveToPosition = {
+      startX: this.getPosition().x,
+      startY: this.getPosition().y,
+      targetX: x,
+      targetY: y,
+      speed,
+      movementType,
+      timestamp: Date.now(),
+    };
+    const timeTillDestination =
+      getDistanceBetweenTwoPoints(this.getPosition(), { x, y }) / speed;
+
+    const loop = () => {
+      const timepassed =
+        (Date.now() - (this.#moveToPosition?.timestamp ?? 0)) / 1000;
+
+      if (timepassed > timeTillDestination) {
+        this.setPosition(x, y);
+        this.#moveToPosition = null;
+        return;
+      }
+
+      const currentPosition = {
+        x:
+          (this.#moveToPosition?.startX ?? 0) +
+          (((this.#moveToPosition?.targetX ?? 0) -
+            (this.#moveToPosition?.startX ?? 0)) *
+            timepassed) /
+            timeTillDestination,
+        y:
+          (this.#moveToPosition?.startY ?? 0) +
+          (((this.#moveToPosition?.targetY ?? 0) -
+            (this.#moveToPosition?.startY ?? 0)) *
+            timepassed) /
+            timeTillDestination,
+      };
+
+      this.setPosition(currentPosition.x, currentPosition.y);
+      requestAnimationFrame(loop);
+    };
+
+    loop();
+
+    return this;
+  };
+
+  getMoveToPosition = (): movementType | null => {
+    return this.#moveToPosition;
   };
 
   setImage = (src: string): CanvasObject => {
@@ -322,5 +385,14 @@ class CanvasObject {
 }
 
 interface CSSProperties extends csstypes.Properties<string | number> {}
+interface movementType {
+  startX: number;
+  startY: number;
+  targetX: number;
+  targetY: number;
+  speed: number;
+  movementType: "linear";
+  timestamp: number;
+}
 
 export default CanvasObject;
