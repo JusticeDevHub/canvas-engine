@@ -2,7 +2,6 @@ import CanvasEngine from "./CanvasEngine.ts";
 import type csstypes from "./csstypes.d.ts";
 import getDistanceBetweenTwoPoints from "../utils/getDistanceBetweenTwoPoints.ts";
 import getMousePosition from "../utils/getMousePosition.ts";
-import moveToPositionLoop from "../utils/moveToPositionLoop.ts";
 
 /**
  * CanvasObject allows you to create, configure, and store items. It is the fundamental object in `CanvasEngine`, which can represent characters, props, scenery, cameras and more.
@@ -191,13 +190,48 @@ class CanvasObject {
     const timeTillDestination =
       getDistanceBetweenTwoPoints(this.getPosition(), { x, y }) / speed;
 
-    moveToPositionLoop(this, x, y, this.#moveToPosition, timeTillDestination);
+    const loop = () => {
+      if (this.#moveToPosition) {
+        const timepassed = (Date.now() - this.#moveToPosition.timestamp) / 1000;
+
+        if (timepassed > timeTillDestination) {
+          this.setPosition(
+            this.#moveToPosition.targetX,
+            this.#moveToPosition.targetY
+          );
+          cancelAnimationFrame(this.#moveToPosition.loopId);
+          return;
+        }
+
+        const currentPosition = {
+          x:
+            this.#moveToPosition.startX +
+            ((this.#moveToPosition.targetX - this.#moveToPosition.startX) *
+              timepassed) /
+              timeTillDestination,
+          y:
+            this.#moveToPosition.startY +
+            ((this.#moveToPosition.targetY - this.#moveToPosition.startY) *
+              timepassed) /
+              timeTillDestination,
+        };
+
+        this.setPosition(currentPosition.x, currentPosition.y);
+        this.#moveToPosition.loopId = requestAnimationFrame(loop);
+      }
+    };
+
+    loop();
     return this;
   };
 
   getMoveToPosition = (): movementInterface | null => {
     return this.#moveToPosition;
   };
+
+  // setMoveInDirection = (direction: number, speed: number): CanvasObject => {
+  //   return this;
+  // };
 
   setImage = (src: string): CanvasObject => {
     if (this.#imageAnimElement === null) {
