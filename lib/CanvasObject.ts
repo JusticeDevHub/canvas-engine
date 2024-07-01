@@ -273,7 +273,7 @@ class CanvasObject {
     return this;
   };
 
-  getText = () => {
+  getText = (): string | number | null => {
     return this.#text;
   };
 
