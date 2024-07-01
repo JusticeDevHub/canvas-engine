@@ -2,6 +2,7 @@ import CanvasEngine from "./CanvasEngine.ts";
 import type csstypes from "./csstypes.d.ts";
 import getDistanceBetweenTwoPoints from "../utils/getDistanceBetweenTwoPoints.ts";
 import getMousePosition from "../utils/getMousePosition.ts";
+import moveToPositionLoop from "../utils/moveToPositionLoop.ts";
 
 /**
  * CanvasObject allows you to create, configure, and store items. It is the fundamental object in `CanvasEngine`, which can represent characters, props, scenery, cameras and more.
@@ -190,40 +191,7 @@ class CanvasObject {
     const timeTillDestination =
       getDistanceBetweenTwoPoints(this.getPosition(), { x, y }) / speed;
 
-    const loop = () => {
-      const timepassed =
-        (Date.now() - (this.#moveToPosition?.timestamp ?? 0)) / 1000;
-
-      if (timepassed > timeTillDestination) {
-        this.setPosition(x, y);
-        this.#moveToPosition = null;
-        return;
-      }
-
-      const currentPosition = {
-        x:
-          (this.#moveToPosition?.startX ?? 0) +
-          (((this.#moveToPosition?.targetX ?? 0) -
-            (this.#moveToPosition?.startX ?? 0)) *
-            timepassed) /
-            timeTillDestination,
-        y:
-          (this.#moveToPosition?.startY ?? 0) +
-          (((this.#moveToPosition?.targetY ?? 0) -
-            (this.#moveToPosition?.startY ?? 0)) *
-            timepassed) /
-            timeTillDestination,
-      };
-
-      this.setPosition(currentPosition.x, currentPosition.y);
-
-      if (this.#moveToPosition) {
-        this.#moveToPosition.loopId = requestAnimationFrame(loop);
-      }
-    };
-
-    loop();
-
+    moveToPositionLoop(this, x, y, this.#moveToPosition, timeTillDestination);
     return this;
   };
 
@@ -320,8 +288,8 @@ class CanvasObject {
       mousePosition: { x: number; y: number }
     ) => void
   ): CanvasObject => {
-    this.#HTMLElement.removeEventListener("mousemove", () => null);
-    this.#HTMLElement.addEventListener("mousemove", (e) => {
+    this.#document.removeEventListener("mousemove", () => null);
+    this.#document.addEventListener("mousemove", (e) => {
       func(this, getMousePosition(this.#canvasEngine, this.#document, e));
     });
     return this;
@@ -419,7 +387,7 @@ class CanvasObject {
 }
 
 interface CSSProperties extends csstypes.Properties<string | number> {}
-interface movementInterface {
+export interface movementInterface {
   startX: number;
   startY: number;
   targetX: number;
