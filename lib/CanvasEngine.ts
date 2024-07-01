@@ -22,11 +22,13 @@ import CanvasObject from "./CanvasObject.ts";
 class CanvasEngine {
   #document: Document;
   #camera: CanvasObject;
+  #canvasId: string;
   #canvas: HTMLElement | null = null;
   #canvasObjects: { [id: string]: CanvasObject } = {};
 
   constructor(canvasId: string, document: Document) {
     this.#document = document;
+    this.#canvasId = canvasId;
 
     const canvasItem = document.getElementById(canvasId);
     if (canvasItem === null) {
@@ -84,6 +86,10 @@ class CanvasEngine {
 
   getCameraObject = (): CanvasObject => {
     return this.#camera;
+  };
+
+  getCanvasId = (): string => {
+    return this.#canvasId;
   };
 
   destroy = (): void => {
