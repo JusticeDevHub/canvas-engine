@@ -1,13 +1,18 @@
-### CanvasEngine
+# CanvasEngine
 
-Descriptions:
-
+### Descriptions:
 1. CanvasEngine bridges HTML5 and game development practices. It provides abstractions for working with HTML5
 2. CanvasEngine is a library
 
-### How to use
+### How to import into project
+- npm: ```npx jsr add @web-dev-library/canvas-engine```
+- deno: ```deno add @web-dev-library/canvas-engine```
+- yarn: ```yarn dlx @web-dev-library/canvas-engine```
+- pnpm: ```pnpm dlx @web-dev-library/canvas-engine```
+- bun: ```bunx @web-dev-library/canvas-engine```
 
-@example
+### How to use
+##### example:
 ```ts
 import CanvasEngine from "@web-dev-library/canvas-engine";
 
