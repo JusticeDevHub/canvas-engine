@@ -1,5 +1,5 @@
 {
   "name": "@web-dev-library/canvas-engine",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "exports": "./index.ts"
 }
