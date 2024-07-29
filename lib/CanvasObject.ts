@@ -57,6 +57,72 @@ class CanvasObject {
     this.#HTMLElement.style.width = "auto";
     this.#HTMLElement.style.height = "auto";
     this.#containerElement.appendChild(this.#HTMLElement);
+
+    const loop = () => {
+      // Check Collisions
+      Object.keys(this.#onCollisionTrigger).forEach((key) => {
+        const _this = {
+          x: this.#HTMLElement.getBoundingClientRect().x,
+          y: this.#HTMLElement.getBoundingClientRect().y,
+          width: this.#HTMLElement.getBoundingClientRect().width,
+          height: this.#HTMLElement.getBoundingClientRect().height,
+        };
+
+        for (
+          let elementIndex = 0;
+          elementIndex < this.#document.getElementsByClassName(key).length;
+          elementIndex++
+        ) {
+          const otherElement = this.#document
+            .getElementsByClassName(key)
+            [elementIndex].getBoundingClientRect();
+
+          const other = {
+            x: otherElement.x,
+            y: otherElement.y,
+            width: otherElement.width,
+            height: otherElement.height,
+          };
+
+          const distance = {
+            x: (_this.width + other.width) / 2,
+            y: (_this.height + other.height) / 2,
+          };
+
+          if (
+            Math.abs(_this.x - other.x) <= distance.x &&
+            Math.abs(_this.y - other.y) <= distance.y
+          ) {
+            let otherId = "";
+            for (
+              let i = 0;
+              i <
+              this.#document.getElementsByClassName(key)[elementIndex].id
+                .length;
+              i++
+            ) {
+              let currentCharacter =
+                this.#document.getElementsByClassName(key)[elementIndex].id[i];
+              if (currentCharacter === " ") {
+                break;
+              }
+              otherId += currentCharacter;
+            }
+
+            // TODO: the else statement below should never trigger because `otherId` should always exist, though should find a better way to handle this.
+            this.#onCollisionTrigger[key](
+              this,
+              this.#canvasEngine.getCanvasObject(otherId) ??
+                this.#canvasEngine.createObject(`${Math.random()}`)
+            );
+          }
+        }
+      });
+
+      requestAnimationFrame(loop);
+    };
+    loop();
+
     return this;
   }
 
@@ -101,64 +167,6 @@ class CanvasObject {
       this.#canvasForCamera.style.left = `calc(50% + ${-x}px)`;
       this.#canvasForCamera.style.top = `calc(50% + ${y}px)`;
     }
-
-    Object.keys(this.#onCollisionTrigger).forEach((key) => {
-      const _this = {
-        x: this.#HTMLElement.getBoundingClientRect().x,
-        y: this.#HTMLElement.getBoundingClientRect().y,
-        width: this.#HTMLElement.getBoundingClientRect().width,
-        height: this.#HTMLElement.getBoundingClientRect().height,
-      };
-
-      for (
-        let elementIndex = 0;
-        elementIndex < this.#document.getElementsByClassName(key).length;
-        elementIndex++
-      ) {
-        const otherElement = this.#document
-          .getElementsByClassName(key)
-          [elementIndex].getBoundingClientRect();
-
-        const other = {
-          x: otherElement.x,
-          y: otherElement.y,
-          width: otherElement.width,
-          height: otherElement.height,
-        };
-
-        const distance = {
-          x: (_this.width + other.width) / 2,
-          y: (_this.height + other.height) / 2,
-        };
-
-        if (
-          Math.abs(_this.x - other.x) <= distance.x &&
-          Math.abs(_this.y - other.y) <= distance.y
-        ) {
-          let otherId = "";
-          for (
-            let i = 0;
-            i <
-            this.#document.getElementsByClassName(key)[elementIndex].id.length;
-            i++
-          ) {
-            let currentCharacter =
-              this.#document.getElementsByClassName(key)[elementIndex].id[i];
-            if (currentCharacter === " ") {
-              break;
-            }
-            otherId += currentCharacter;
-          }
-
-          // TODO: the else statement below should never trigger because `otherId` should always exist, though should find a better way to handle this.
-          this.#onCollisionTrigger[key](
-            this,
-            this.#canvasEngine.getCanvasObject(otherId) ??
-              this.#canvasEngine.createObject(`${Math.random()}`)
-          );
-        }
-      }
-    });
 
     return this;
   };
