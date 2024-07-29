@@ -20,7 +20,7 @@ class CanvasObject {
   #position: { x: number; y: number } = { x: 0, y: 0 };
   #moveToPosition: movementInterface | null = null;
   #onCollisionTrigger: {
-    [key: string]: (_this: CanvasObject, other: CanvasObject | null) => void;
+    [key: string]: (_this: CanvasObject, other: CanvasObject) => void;
   } = {};
 
   constructor(
@@ -150,9 +150,11 @@ class CanvasObject {
             otherId += currentCharacter;
           }
 
+          // TODO: the else statement below should never trigger because `otherId` should always exist, though should find a better way to handle this.
           this.#onCollisionTrigger[key](
             this,
-            this.#canvasEngine.getCanvasObject(otherId)
+            this.#canvasEngine.getCanvasObject(otherId) ??
+              this.#canvasEngine.createObject(`${Math.random()}`)
           );
         }
       }
@@ -231,6 +233,14 @@ class CanvasObject {
 
   getMoveToPosition = (): movementInterface | null => {
     return this.#moveToPosition;
+  };
+
+  setStopMovement = () => {
+    if (this.#moveToPosition !== null) {
+      cancelAnimationFrame(this.#moveToPosition.loopId);
+    }
+    this.#moveToPosition = null;
+    return this;
   };
 
   setMoveInDirection = (
@@ -359,7 +369,7 @@ class CanvasObject {
 
   getCollisionTriggers = (): Record<
     string,
-    (_this: CanvasObject, other: CanvasObject | null) => void
+    (_this: CanvasObject, other: CanvasObject) => void
   > => {
     return this.#onCollisionTrigger;
   };
