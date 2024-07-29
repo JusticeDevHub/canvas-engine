@@ -361,7 +361,7 @@ class CanvasObject {
 
   onCollisionTrigger = (
     targetClass: string,
-    func: (_this: CanvasObject, other: CanvasObject | null) => void
+    func: (_this: CanvasObject, other: CanvasObject) => void
   ): CanvasObject => {
     this.#onCollisionTrigger[targetClass] = func;
     return this;
