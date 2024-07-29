@@ -235,7 +235,7 @@ class CanvasObject {
     return this.#moveToPosition;
   };
 
-  setStopMovement = () => {
+  setStopMovement = (): CanvasObject => {
     if (this.#moveToPosition !== null) {
       cancelAnimationFrame(this.#moveToPosition.loopId);
     }
