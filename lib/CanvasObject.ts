@@ -19,6 +19,7 @@ class CanvasObject {
   #functions: { [key: string]: (params?: any) => void } = {};
   #position: { x: number; y: number } = { x: 0, y: 0 };
   #moveToPosition: movementInterface | null = null;
+  #onDestroyCall: (_this: CanvasObject) => void = () => null;
   #onCollisionTrigger: {
     [key: string]: (_this: CanvasObject, other: CanvasObject) => void;
   } = {};
@@ -433,7 +434,12 @@ class CanvasObject {
     return this.#id;
   };
 
+  onDestroy = (callback: (_this: CanvasObject) => void) => {
+    this.#onDestroyCall = callback;
+  };
+
   destroy = (): void => {
+    this.#onDestroyCall(this);
     this.#containerElement.remove();
   };
 }
