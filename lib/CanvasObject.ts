@@ -434,7 +434,7 @@ class CanvasObject {
     return this.#id;
   };
 
-  onDestroy = (callback: (_this: CanvasObject) => void) => {
+  onDestroy = (callback: (_this: CanvasObject) => void): void => {
     this.#onDestroyCall = callback;
   };
 
