@@ -159,17 +159,9 @@ class CanvasObject {
   };
 
   setPosition = (x: number, y: number): CanvasObject => {
-    this.#position.x = x;
-    this.#position.y = y;
-    this.#containerElement.style.left = `${x}px`;
-    this.#containerElement.style.top = `${-y}px`;
+    this.#updateObjectPosition(x, y);
 
-    if (this.#isCamera && this.#canvasForCamera) {
-      this.#canvasForCamera.style.left = `calc(50% + ${-x}px)`;
-      this.#canvasForCamera.style.top = `calc(50% + ${y}px)`;
-    }
-
-    if (this.#moveToPosition && this.#moveToPosition.speed > 0) {
+    if (this.#moveToPosition !== null) {
       this.#moveToPosition.startX = this.#position.x;
       this.#moveToPosition.startY = this.#position.y;
       this.#moveToPosition.timestamp = Date.now();
@@ -180,6 +172,18 @@ class CanvasObject {
 
   getPosition = (): { x: number; y: number } => {
     return { ...this.#position };
+  };
+
+  #updateObjectPosition = (x: number, y: number) => {
+    this.#position.x = x;
+    this.#position.y = y;
+    this.#containerElement.style.left = `${x}px`;
+    this.#containerElement.style.top = `${-y}px`;
+
+    if (this.#isCamera && this.#canvasForCamera) {
+      this.#canvasForCamera.style.left = `calc(50% + ${-x}px)`;
+      this.#canvasForCamera.style.top = `calc(50% + ${y}px)`;
+    }
   };
 
   /**
@@ -216,10 +220,11 @@ class CanvasObject {
         const timepassed = (Date.now() - this.#moveToPosition.timestamp) / 1000;
 
         if (timepassed > timeTillDestination) {
-          this.setPosition(
+          this.#updateObjectPosition(
             this.#moveToPosition.targetX,
             this.#moveToPosition.targetY
           );
+          this.setStopMovement();
           cancelAnimationFrame(this.#moveToPosition.loopId);
           return;
         }
@@ -237,7 +242,7 @@ class CanvasObject {
               timeTillDestination,
         };
 
-        this.setPosition(currentPosition.x, currentPosition.y);
+        this.#updateObjectPosition(currentPosition.x, currentPosition.y);
         this.#moveToPosition.loopId = requestAnimationFrame(loop);
       }
     };
