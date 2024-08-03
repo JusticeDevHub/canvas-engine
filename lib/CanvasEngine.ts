@@ -125,28 +125,34 @@ class CanvasEngine {
     getMousePosition: (): { x: number; y: number } => {
       return this.#mousePosition;
     },
-    getClosestCanvasObjectToPoint: (
-      canvasObjects: CanvasObject[],
+    /**
+     * Returns index of closest point to target point
+     * @param points number
+     * @param point number
+     * @returns
+     */
+    getClosestToPoint: (
+      points: { x: number; y: number }[],
       point: { x: number; y: number }
-    ): CanvasObject | null => {
-      let closestCanvasObject: CanvasObject | null = null;
+    ): number | null => {
+      let closestCanvasObject: { x: number; y: number } | null = null;
       let closestDistance = 0;
       let closestIndex: null | number = null;
 
-      canvasObjects.forEach((obj, i) => {
+      points.forEach((obj, i) => {
         if (closestCanvasObject === null) {
           closestIndex = i;
           closestCanvasObject = obj;
           closestDistance = this.utils.getDistanceBetweenTwoPoints(
-            obj.getPosition().x,
-            obj.getPosition().y,
+            obj.x,
+            obj.y,
             point.x,
             point.y
           );
         } else {
           const thisDistance = this.utils.getDistanceBetweenTwoPoints(
-            obj.getPosition().x,
-            obj.getPosition().y,
+            obj.x,
+            obj.y,
             point.x,
             point.y
           );
@@ -159,11 +165,7 @@ class CanvasEngine {
         }
       });
 
-      if (closestIndex === null) {
-        return null;
-      } else {
-        return canvasObjects[closestIndex];
-      }
+      return closestIndex;
     },
   };
 
