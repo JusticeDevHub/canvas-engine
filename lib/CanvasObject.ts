@@ -170,11 +170,9 @@ class CanvasObject {
     }
 
     if (this.#moveToPosition && this.#moveToPosition.speed > 0) {
-      this.setMoveToPosition(
-        this.#moveToPosition.targetX,
-        this.#moveToPosition.targetY,
-        this.#moveToPosition.speed
-      );
+      this.#moveToPosition.startX = this.#position.x;
+      this.#moveToPosition.startY = this.#position.y;
+      this.#moveToPosition.timestamp = Date.now();
     }
 
     return this;
