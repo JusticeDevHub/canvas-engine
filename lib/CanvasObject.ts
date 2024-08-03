@@ -169,6 +169,14 @@ class CanvasObject {
       this.#canvasForCamera.style.top = `calc(50% + ${y}px)`;
     }
 
+    if (this.#moveToPosition && this.#moveToPosition.speed > 0) {
+      this.setMoveToPosition(
+        this.#moveToPosition.targetX,
+        this.#moveToPosition.targetY,
+        this.#moveToPosition.speed
+      );
+    }
+
     return this;
   };
 
