@@ -192,9 +192,7 @@ class CanvasObject {
    * @param movementType currently just linear, will add more movement types
    */
   setMoveToPosition = (x: number, y: number, speed: number): CanvasObject => {
-    if (this.#moveToPosition) {
-      cancelAnimationFrame(this.#moveToPosition.loopId);
-    }
+    this.setStopMovement();
 
     this.#moveToPosition = {
       startX: this.getPosition().x,
@@ -225,7 +223,6 @@ class CanvasObject {
             this.#moveToPosition.targetY
           );
           this.setStopMovement();
-          cancelAnimationFrame(this.#moveToPosition.loopId);
           return;
         }
 
