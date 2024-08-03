@@ -135,14 +135,12 @@ class CanvasEngine {
       points: { x: number; y: number }[],
       point: { x: number; y: number }
     ): number | null => {
-      let closestCanvasObject: { x: number; y: number } | null = null;
       let closestDistance = 0;
       let closestIndex: null | number = null;
 
       points.forEach((obj, i) => {
-        if (closestCanvasObject === null) {
+        if (i === 0) {
           closestIndex = i;
-          closestCanvasObject = obj;
           closestDistance = this.utils.getDistanceBetweenTwoPoints(
             obj.x,
             obj.y,
@@ -159,7 +157,6 @@ class CanvasEngine {
 
           if (thisDistance < closestDistance) {
             closestIndex = i;
-            closestCanvasObject = obj;
             closestDistance = thisDistance;
           }
         }
