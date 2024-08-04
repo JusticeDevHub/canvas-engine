@@ -159,6 +159,34 @@ class CanvasEngine {
 
       return closestIndex;
     },
+    getPointDistancesInOrdered: (
+      points: { x: number; y: number }[],
+      point: { x: number; y: number }
+    ): number[] => {
+      const distances: { index: number; distance: number }[] = [];
+
+      points.forEach((p, index) => {
+        distances.push({
+          index,
+          distance: this.utils.getDistanceBetweenTwoPoints(
+            p.x,
+            p.y,
+            point.x,
+            point.y
+          ),
+        });
+      });
+
+      distances.sort((a, b) => {
+        return b.distance - a.distance;
+      });
+
+      return distances
+        .map((d) => {
+          return d.index;
+        })
+        .reverse();
+    },
   };
 
   destroy = (): void => {
