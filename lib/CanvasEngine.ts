@@ -139,22 +139,17 @@ class CanvasEngine {
       let closestIndex: null | number = null;
 
       points.forEach((obj, i) => {
+        const thisDistance = this.utils.getDistanceBetweenTwoPoints(
+          obj.x,
+          obj.y,
+          point.x,
+          point.y
+        );
+
         if (i === 0) {
           closestIndex = i;
-          closestDistance = this.utils.getDistanceBetweenTwoPoints(
-            obj.x,
-            obj.y,
-            point.x,
-            point.y
-          );
+          closestDistance = thisDistance;
         } else {
-          const thisDistance = this.utils.getDistanceBetweenTwoPoints(
-            obj.x,
-            obj.y,
-            point.x,
-            point.y
-          );
-
           if (thisDistance < closestDistance) {
             closestIndex = i;
             closestDistance = thisDistance;

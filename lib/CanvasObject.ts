@@ -193,6 +193,9 @@ class CanvasObject {
    */
   setMoveToPosition = (x: number, y: number, speed: number): CanvasObject => {
     this.setStopMovement();
+    if (speed === 0) {
+      return this;
+    }
 
     this.#moveToPosition = {
       startX: this.getPosition().x,
@@ -217,7 +220,7 @@ class CanvasObject {
       if (this.#moveToPosition) {
         const timepassed = (Date.now() - this.#moveToPosition.timestamp) / 1000;
 
-        if (timepassed > timeTillDestination) {
+        if (timepassed >= timeTillDestination) {
           this.#updateObjectPosition(
             this.#moveToPosition.targetX,
             this.#moveToPosition.targetY
