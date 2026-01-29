@@ -1,470 +1,370 @@
-import CanvasEngine from "./CanvasEngine.ts";
-import type csstypes from "./csstypes.d.ts";
-import getMousePosition from "../utils/getMousePosition.ts";
+// CanvasObject.ts
 
-/**
- * CanvasObject allows you to create, configure, and store items. It is the fundamental object in `CanvasEngine`, which can represent characters, props, scenery, cameras and more.
- */
-class CanvasObject {
-  #id: string;
-  #HTMLElement: HTMLElement;
-  #containerElement: HTMLElement;
-  #document: Document;
-  #isCamera: boolean;
-  #text: string | number | null;
-  #imageAnimElement: HTMLImageElement | null = null;
-  #canvasForCamera: HTMLElement | null = null;
-  #canvasEngine: CanvasEngine;
-  #variables: { [key: string]: any } = {};
-  #functions: { [key: string]: (params?: any) => void } = {};
-  #position: { x: number; y: number } = { x: 0, y: 0 };
-  #moveToPosition: movementInterface | null = null;
-  #onDestroyCall: (_this: CanvasObject) => void = () => null;
-  #onCollisionTrigger: {
-    [key: string]: (_this: CanvasObject, other: CanvasObject) => void;
-  } = {};
+import CanvasEngine from "./CanvasEngine.js";
 
-  constructor(
-    id: string,
-    document: Document,
-    canvasEngine: CanvasEngine,
-    parent: HTMLElement | null,
-    isChild: boolean,
-    isCamera: boolean
-  ) {
-    this.#id = id;
-    this.#canvasEngine = canvasEngine;
-    this.#document = document;
-    this.#isCamera = isCamera;
-    this.#containerElement = this.#document.createElement("div");
-    this.#containerElement.style.position = "absolute";
-    this.#containerElement.style.width = "fit-content";
-    this.#containerElement.style.height = "fit-content";
-    this.#containerElement.style.transform = "translate(-50%, -50%)";
-    if (isChild) {
-      this.#containerElement.style.left = "50%";
-      this.#containerElement.style.top = "50%";
-    }
-    if (isCamera) {
-      this.#canvasForCamera = parent;
-    }
-    parent === null
-      ? this.#document.appendChild(this.#containerElement)
-      : parent.appendChild(this.#containerElement);
-
-    this.#HTMLElement = this.#document.createElement("div");
-    this.#HTMLElement.id = id;
-    this.#HTMLElement.style.position = "relative";
-    this.#HTMLElement.style.width = "auto";
-    this.#HTMLElement.style.height = "auto";
-    this.#containerElement.appendChild(this.#HTMLElement);
-
-    const loop = () => {
-      // Check Collisions
-      Object.keys(this.#onCollisionTrigger).forEach((key) => {
-        const _this = {
-          x: this.#HTMLElement.getBoundingClientRect().x,
-          y: this.#HTMLElement.getBoundingClientRect().y,
-          width: this.#HTMLElement.getBoundingClientRect().width,
-          height: this.#HTMLElement.getBoundingClientRect().height,
-        };
-
-        for (
-          let elementIndex = 0;
-          elementIndex < this.#document.getElementsByClassName(key).length;
-          elementIndex++
-        ) {
-          const otherElement = this.#document
-            .getElementsByClassName(key)
-            [elementIndex].getBoundingClientRect();
-
-          const other = {
-            x: otherElement.x,
-            y: otherElement.y,
-            width: otherElement.width,
-            height: otherElement.height,
-          };
-
-          const distance = {
-            x: (_this.width + other.width) / 2,
-            y: (_this.height + other.height) / 2,
-          };
-
-          if (
-            Math.abs(_this.x - other.x) <= distance.x &&
-            Math.abs(_this.y - other.y) <= distance.y
-          ) {
-            let otherId = "";
-            for (
-              let i = 0;
-              i <
-              this.#document.getElementsByClassName(key)[elementIndex].id
-                .length;
-              i++
-            ) {
-              let currentCharacter =
-                this.#document.getElementsByClassName(key)[elementIndex].id[i];
-              if (currentCharacter === " ") {
-                break;
-              }
-              otherId += currentCharacter;
-            }
-
-            // TODO: the else statement below should never trigger because `otherId` should always exist, though should find a better way to handle this.
-            this.#onCollisionTrigger[key](
-              this,
-              this.#canvasEngine.getCanvasObject(otherId) ??
-                this.#canvasEngine.createObject(`${Math.random()}`)
-            );
-          }
-        }
-      });
-
-      requestAnimationFrame(loop);
-    };
-    loop();
-
-    return this;
-  }
-
-  setStyle = (style: CSSProperties): CanvasObject => {
-    Object.keys(style).forEach((styleKey, i) => {
-      let value = Object.values(style)[i] as any;
-
-      if (styleKey === "zIndex") {
-        this.#containerElement.style.zIndex = value;
-      }
-      if (
-        styleKey.toLowerCase() === "position" &&
-        value.toLowerCase() === "fixed"
-      ) {
-        this.#containerElement.style.position = value;
-      }
-      if (
-        styleKey.toLowerCase().includes("width") &&
-        typeof value === "number"
-      ) {
-        value = value + "px";
-      }
-      if (
-        styleKey.toLowerCase().includes("height") &&
-        typeof value === "number"
-      ) {
-        value = value + "px";
-      }
-
-      this.#HTMLElement.style[styleKey] = value;
-    });
-    return this;
-  };
-
-  setPosition = (x: number, y: number): CanvasObject => {
-    this.#updateObjectPosition(x, y);
-
-    if (this.#moveToPosition !== null) {
-      this.#moveToPosition.startX = this.#position.x;
-      this.#moveToPosition.startY = this.#position.y;
-      this.#moveToPosition.timestamp = Date.now();
-    }
-
-    return this;
-  };
-
-  getPosition = (): { x: number; y: number } => {
-    return { ...this.#position };
-  };
-
-  #updateObjectPosition = (x: number, y: number) => {
-    this.#position.x = x;
-    this.#position.y = y;
-    this.#containerElement.style.left = `${x}px`;
-    this.#containerElement.style.top = `${-y}px`;
-
-    if (this.#isCamera && this.#canvasForCamera) {
-      this.#canvasForCamera.style.left = `calc(50% + ${-x}px)`;
-      this.#canvasForCamera.style.top = `calc(50% + ${y}px)`;
-    }
-  };
-
-  /**
-   *
-   * @param speed pixels per second
-   * @param movementType currently just linear, will add more movement types
-   */
-  setMoveToPosition = (x: number, y: number, speed: number): CanvasObject => {
-    this.setStopMovement();
-    if (speed === 0) {
-      return this;
-    }
-
-    this.#moveToPosition = {
-      startX: this.getPosition().x,
-      startY: this.getPosition().y,
-      targetX: x,
-      targetY: y,
-      speed,
-      movementType: "linear",
-      timestamp: Date.now(),
-      loopId: -1,
-    };
-
-    const timeTillDestination =
-      this.#canvasEngine.utils.getDistanceBetweenTwoPoints(
-        this.getPosition().x,
-        this.getPosition().y,
-        x,
-        y
-      ) / speed;
-
-    const loop = () => {
-      if (this.#moveToPosition) {
-        const timepassed = (Date.now() - this.#moveToPosition.timestamp) / 1000;
-
-        if (timepassed >= timeTillDestination) {
-          this.#updateObjectPosition(
-            this.#moveToPosition.targetX,
-            this.#moveToPosition.targetY
-          );
-          this.setStopMovement();
-          return;
-        }
-
-        const currentPosition = {
-          x:
-            this.#moveToPosition.startX +
-            ((this.#moveToPosition.targetX - this.#moveToPosition.startX) *
-              timepassed) /
-              timeTillDestination,
-          y:
-            this.#moveToPosition.startY +
-            ((this.#moveToPosition.targetY - this.#moveToPosition.startY) *
-              timepassed) /
-              timeTillDestination,
-        };
-
-        this.#updateObjectPosition(currentPosition.x, currentPosition.y);
-        this.#moveToPosition.loopId = requestAnimationFrame(loop);
-      }
-    };
-
-    loop();
-    return this;
-  };
-
-  getMoveToPosition = (): movementInterface | null => {
-    return this.#moveToPosition;
-  };
-
-  setStopMovement = (): CanvasObject => {
-    if (this.#moveToPosition !== null) {
-      cancelAnimationFrame(this.#moveToPosition.loopId);
-    }
-    this.#moveToPosition = null;
-    return this;
-  };
-
-  setMoveInDirection = (
-    direction: number,
-    distance: number,
-    speed: number
-  ): CanvasObject => {
-    direction *= -1;
-    direction += 90;
-    direction *= Math.PI / 180;
-    const pos = this.getPosition();
-    pos.x = pos.x + Math.cos(direction) * distance;
-    pos.y = pos.y + Math.sin(direction) * distance;
-    this.setMoveToPosition(pos.x, pos.y, speed);
-    return this;
-  };
-
-  setImage = (src: string): CanvasObject => {
-    if (this.#imageAnimElement === null) {
-      const imageElement = this.#document.createElement("img");
-      imageElement.style.position = "relative";
-      imageElement.style.left = "50%";
-      // imageElement.style.top = "50%";
-      imageElement.style.transform = "translateX(-50%)";
-
-      this.#imageAnimElement = imageElement;
-      this.#HTMLElement.appendChild(imageElement);
-    }
-
-    if (this.#imageAnimElement) {
-      this.#imageAnimElement.src = src;
-    }
-    return this;
-  };
-
-  createChild = (id: string): CanvasObject => {
-    // TODO: is not in the canvasEngine obj pool
-    const childObj = new CanvasObject(
-      id,
-      this.#document,
-      this.#canvasEngine,
-      this.#HTMLElement,
-      true,
-      false
-    );
-    return childObj;
-  };
-
-  onMouseEnter = (
-    func: (_this: CanvasObject, mousePosition: { x: number; y: number }) => void
-  ): CanvasObject => {
-    this.#HTMLElement.removeEventListener("mouseenter", () => null);
-    this.#HTMLElement.addEventListener("mouseenter", (e) => {
-      func(this, getMousePosition(this.#canvasEngine, this.#document, e));
-    });
-    return this;
-  };
-
-  onMouseLeave = (
-    func: (_this: CanvasObject, mousePosition: { x: number; y: number }) => void
-  ): CanvasObject => {
-    this.#HTMLElement.removeEventListener("mouseleave", () => null);
-    this.#HTMLElement.addEventListener("mouseleave", (e) => {
-      func(this, getMousePosition(this.#canvasEngine, this.#document, e));
-    });
-    return this;
-  };
-
-  onMouseClickGlobal = (
-    func: (_this: CanvasObject, mousePosition: { x: number; y: number }) => void
-  ): CanvasObject => {
-    this.#document.removeEventListener("mousedown", () => null);
-    this.#document.addEventListener("mousedown", (e) => {
-      func(this, getMousePosition(this.#canvasEngine, this.#document, e));
-    });
-    return this;
-  };
-
-  onMouseClickThis = (
-    func: (_this: CanvasObject, mousePosition: { x: number; y: number }) => void
-  ): CanvasObject => {
-    this.#HTMLElement.removeEventListener("mousedown", () => null);
-    this.#HTMLElement.addEventListener("mousedown", (e) => {
-      func(this, getMousePosition(this.#canvasEngine, this.#document, e));
-    });
-    return this;
-  };
-
-  onMouseMove = (
-    func: (_this: CanvasObject, mousePosition: { x: number; y: number }) => void
-  ): CanvasObject => {
-    this.#document.removeEventListener("mousemove", () => null);
-    this.#document.addEventListener("mousemove", (e) => {
-      func(this, getMousePosition(this.#canvasEngine, this.#document, e));
-    });
-    return this;
-  };
-
-  onKeyDown = (
-    func: (_this: CanvasObject, key: string) => void
-  ): CanvasObject => {
-    this.#document.removeEventListener("keydown", () => null);
-    this.#document.addEventListener("keydown", (e: KeyboardEvent) => {
-      func(this, e.key);
-    });
-    return this;
-  };
-
-  onKeyUp = (
-    func: (canvasObject: CanvasObject, key: string) => void
-  ): CanvasObject => {
-    this.#document.removeEventListener("keyup", () => null);
-    this.#document.addEventListener("keyup", (e: KeyboardEvent) => {
-      func(this, e.key);
-    });
-    return this;
-  };
-
-  onCollisionTrigger = (
-    targetClass: string,
-    func: (_this: CanvasObject, other: CanvasObject) => void
-  ): CanvasObject => {
-    this.#onCollisionTrigger[targetClass] = func;
-    return this;
-  };
-
-  getCollisionTriggers = (): Record<
-    string,
-    (_this: CanvasObject, other: CanvasObject) => void
-  > => {
-    return this.#onCollisionTrigger;
-  };
-
-  setText = (str: string | number): CanvasObject => {
-    if (this.#text === null) {
-      this.#text = str;
-    }
-    this.#HTMLElement.innerText = `${str}`;
-    return this;
-  };
-
-  getText = (): string | number | null => {
-    return this.#text;
-  };
-
-  setVariable = (key: string, value: any): CanvasObject => {
-    this.#variables[key] = value;
-    return this;
-  };
-
-  getVariable = (key: string): any => {
-    return this.#variables[key] ?? null;
-  };
-
-  createFunction = (
-    functionName: string,
-    func: (params?: any) => void
-  ): CanvasObject => {
-    this.#functions[functionName] = func;
-    return this;
-  };
-
-  callFunction = (functionName: string, params?: any): CanvasObject => {
-    const func: ((params?: any) => void) | null = this.#functions[functionName];
-    if (!func) {
-      return this;
-    }
-    func(params);
-    return this;
-  };
-
-  addClass = (className: string): CanvasObject => {
-    this.#HTMLElement.classList.add(className);
-    return this;
-  };
-
-  getClasses = (): DOMTokenList => {
-    return this.#HTMLElement.classList;
-  };
-
-  getId = (): string => {
-    return this.#id;
-  };
-
-  onDestroy = (callback: (_this: CanvasObject) => void): void => {
-    this.#onDestroyCall = callback;
-  };
-
-  destroy = (): void => {
-    this.#onDestroyCall(this);
-    this.#containerElement.remove();
-  };
-}
-
-interface CSSProperties extends csstypes.Properties<string | number> {}
-export interface movementInterface {
+interface Movement {
   startX: number;
   startY: number;
   targetX: number;
   targetY: number;
   speed: number;
-  movementType: "linear";
-  timestamp: number;
-  loopId: number;
+  startTime: number;
+  duration: number;
+}
+
+type CSSProperties = Partial<CSSStyleDeclaration>;
+
+/**
+ * An object that can move, collide, and interact.
+ */
+class CanvasObject {
+  #id: string;
+  #document: Document;
+  #engine: CanvasEngine;
+  #container: HTMLElement;
+  #content: HTMLElement;
+  #isCamera: boolean;
+
+  #pos = { x: 0, y: 0 };
+  #movement: Movement | null = null;
+  #listeners = new Map<string, (e: Event) => void>();
+  #collisionObserver: IntersectionObserver | null = null;
+  #collisionHandlers = new Map<
+    string,
+    (self: CanvasObject, other: CanvasObject) => void
+  >();
+  #functions = new Map<string, (params?: any) => void>();
+  #vars = new Map<string, any>();
+  #imgEl: HTMLImageElement | null = null;
+  #onDestroy: ((self: CanvasObject) => void) | null = null;
+
+  constructor(
+    id: string,
+    document: Document,
+    engine: CanvasEngine,
+    parent: HTMLElement | null,
+    isChild = false,
+    isCamera = false,
+  ) {
+    this.#id = id;
+    this.#document = document;
+    this.#engine = engine;
+    this.#isCamera = isCamera;
+    const parentEl = parent || document.body;
+
+    // Container handles positioning via transform
+    this.#container = document.createElement("div");
+    this.#container.style.cssText =
+      "position:absolute;transform:translate(-50%,-50%);will-change:transform;width:fit-content";
+
+    if (isChild) {
+      this.#container.style.left = "50%";
+      this.#container.style.top = "50%";
+    }
+
+    parentEl.appendChild(this.#container);
+
+    // Content holds the image/text
+    this.#content = document.createElement("div");
+    this.#content.id = id;
+    this.#content.style.position = "relative";
+    this.#container.appendChild(this.#content);
+
+    this.#setupCollisionObserver();
+  }
+
+  #setupCollisionObserver(): void {
+    this.#collisionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+
+          entry.target.classList.forEach((cls) => {
+            const handler = this.#collisionHandlers.get(cls);
+            if (!handler) return;
+
+            const otherId = entry.target.id;
+            const other = this.#engine.getCanvasObject(otherId);
+            if (other) handler(this, other);
+          });
+        });
+      },
+      { threshold: 0 },
+    );
+  }
+
+  /** @internal Called by the game loop every frame. */
+  update(deltaTime: number): void {
+    if (!this.#movement) return;
+
+    const elapsed = (performance.now() - this.#movement.startTime) / 1000;
+
+    if (elapsed >= this.#movement.duration) {
+      this.setPosition(this.#movement.targetX, this.#movement.targetY);
+      this.#movement = null;
+      return;
+    }
+
+    const t = elapsed / this.#movement.duration;
+    const x =
+      this.#movement.startX +
+      (this.#movement.targetX - this.#movement.startX) * t;
+    const y =
+      this.#movement.startY +
+      (this.#movement.targetY - this.#movement.startY) * t;
+
+    this.#applyPosition(x, y);
+  }
+
+  #applyPosition(x: number, y: number): void {
+    this.#pos.x = x;
+    this.#pos.y = y;
+
+    if (this.#isCamera) {
+      // Move scene opposite to camera
+      (this.#container.parentElement as HTMLElement).style.transform =
+        `translate(calc(-50% + ${-x}px), calc(-50% + ${y}px))`;
+    } else {
+      // Regular objects: translate3d for GPU acceleration
+      // Note: -y because CSS Y is down, GameMaker Y is up
+      this.#container.style.transform = `translate3d(${x}px, ${-y}px, 0) translate(-50%, -50%)`;
+    }
+  }
+
+  /**
+   * Set position immediately (stops any movement).
+   * @param x - Horizontal position (0 = center, positive = right)
+   * @param y - Vertical position (0 = center, positive = up)
+   */
+  setPosition(x: number, y: number): this {
+    this.#movement = null;
+    this.#applyPosition(x, y);
+    return this;
+  }
+
+  getPosition(): { x: number; y: number } {
+    return { ...this.#pos };
+  }
+
+  /** Apply CSS styles (width, height, backgroundColor, etc.). */
+  setStyle(style: CSSProperties): this {
+    Object.assign(this.#content.style, style);
+    return this;
+  }
+
+  /**
+   * Move to position over time.
+   * @param speed - Pixels per second
+   */
+  setMoveToPosition(x: number, y: number, speed: number): this {
+    if (speed <= 0) return this;
+    const dist = Math.hypot(x - this.#pos.x, y - this.#pos.y);
+    if (dist === 0) return this;
+
+    this.#movement = {
+      startX: this.#pos.x,
+      startY: this.#pos.y,
+      targetX: x,
+      targetY: y,
+      speed,
+      startTime: performance.now(),
+      duration: dist / speed,
+    };
+    return this;
+  }
+
+  /** Stop moving immediately. */
+  setStopMovement(): this {
+    this.#movement = null;
+    return this;
+  }
+
+  /**
+   * Move in a direction.
+   * @param direction - Degrees: 0 = Up, 90 = Right, 180 = Down, 270 = Left
+   * @param distance - How far to move in pixels
+   * @param speed - Pixels per second
+   */
+  setMoveInDirection(direction: number, distance: number, speed: number): this {
+    // Convert GameMaker angle (0=up) to standard math (0=right)
+    const rad = (90 - direction) * (Math.PI / 180);
+    const tx = this.#pos.x + Math.cos(rad) * distance;
+    const ty = this.#pos.y + Math.sin(rad) * distance;
+    return this.setMoveToPosition(tx, ty, speed);
+  }
+
+  /** Set an image. */
+  setImage(src: string): this {
+    if (!this.#imgEl) {
+      this.#imgEl = this.#document.createElement("img");
+      this.#imgEl.style.cssText =
+        "display:block;max-width:100%;user-select:none";
+      this.#content.appendChild(this.#imgEl);
+    }
+    this.#imgEl.src = src;
+    return this;
+  }
+
+  /** Set text content. */
+  setText(text: string | number): this {
+    this.#content.textContent = String(text);
+    return this;
+  }
+
+  /** Create a child object that moves with this one. */
+  createChild(id: string): CanvasObject {
+    return new CanvasObject(
+      id,
+      this.#document,
+      this.#engine,
+      this.#content,
+      true,
+      false,
+    );
+  }
+
+  /**
+   * Call when hitting objects with this CSS class.
+   * @param targetClass - e.g., "enemy", "coin"
+   */
+  onCollisionTrigger(
+    targetClass: string,
+    callback: (self: CanvasObject, other: CanvasObject) => void,
+  ): this {
+    this.addClass(targetClass);
+    this.#collisionHandlers.set(targetClass, callback);
+
+    // Watch existing objects
+    this.#document.querySelectorAll(`.${targetClass}`).forEach((el) => {
+      if (el !== this.#content) this.#collisionObserver?.observe(el);
+    });
+
+    return this;
+  }
+
+  /** Add CSS class (for styling or collision tags). */
+  addClass(className: string): this {
+    this.#content.classList.add(className);
+    return this;
+  }
+
+  /** Mouse enters this object. */
+  onMouseEnter(
+    callback: (self: CanvasObject, mouse: { x: number; y: number }) => void,
+  ): this {
+    return this.#on("mouseenter", this.#content, () =>
+      callback(this, this.#engine.getMousePosition()),
+    );
+  }
+
+  /** Mouse leaves this object. */
+  onMouseLeave(
+    callback: (self: CanvasObject, mouse: { x: number; y: number }) => void,
+  ): this {
+    return this.#on("mouseleave", this.#content, () =>
+      callback(this, this.#engine.getMousePosition()),
+    );
+  }
+
+  /** Clicked on this specific object. */
+  onMouseClickThis(
+    callback: (self: CanvasObject, mouse: { x: number; y: number }) => void,
+  ): this {
+    return this.#on("mousedown", this.#content, (e) => {
+      e.stopPropagation();
+      callback(this, this.#engine.getMousePosition());
+    });
+  }
+
+  /** Clicked anywhere in the document. */
+  onMouseClickGlobal(
+    callback: (self: CanvasObject, mouse: { x: number; y: number }) => void,
+  ): this {
+    return this.#on("mousedown", this.#document, () =>
+      callback(this, this.#engine.getMousePosition()),
+    );
+  }
+
+  /** Key pressed (document level). */
+  onKeyDown(callback: (self: CanvasObject, key: string) => void): this {
+    return this.#on("keydown", this.#document, (e) =>
+      callback(this, (e as KeyboardEvent).key),
+    );
+  }
+
+  /** Key released. */
+  onKeyUp(callback: (self: CanvasObject, key: string) => void): this {
+    return this.#on("keyup", this.#document, (e) =>
+      callback(this, (e as KeyboardEvent).key),
+    );
+  }
+
+  /** Store a function callable via callFunction(). Useful for framework integration. */
+  createFunction(name: string, fn: (params?: any) => void): this {
+    this.#functions.set(name, fn);
+    return this;
+  }
+
+  /** Call a function stored earlier. */
+  callFunction(name: string, params?: any): this {
+    const fn = this.#functions.get(name);
+    if (fn) {
+      try {
+        fn(params);
+      } catch (e) {
+        console.error(`Error in ${name}:`, e);
+      }
+    }
+    return this;
+  }
+
+  /** Store arbitrary data. */
+  setVariable(key: string, value: any): this {
+    this.#vars.set(key, value);
+    return this;
+  }
+
+  getVariable(key: string): any {
+    return this.#vars.get(key);
+  }
+
+  /** Callback when destroy() is called. */
+  onDestroy(callback: (self: CanvasObject) => void): this {
+    this.#onDestroy = callback;
+    return this;
+  }
+
+  getId(): string {
+    return this.#id;
+  }
+
+  /** Remove object and cleanup. */
+  destroy(): void {
+    this.#onDestroy?.(this);
+
+    // Remove listeners
+    this.#listeners.forEach((fn, key) => {
+      const [event, target] = key.split("|");
+      const el = target === "doc" ? this.#document : this.#content;
+      el.removeEventListener(event, fn);
+    });
+
+    this.#collisionObserver?.disconnect();
+    this.#engine.unregisterObject(this.#id);
+    this.#container.remove();
+  }
+
+  #on(event: string, target: EventTarget, handler: (e: Event) => void): this {
+    const key = `${event}|${target === this.#document ? "doc" : "el"}`;
+
+    // Remove old listener if exists
+    const old = this.#listeners.get(key);
+    if (old) target.removeEventListener(event, old);
+
+    target.addEventListener(event, handler);
+    this.#listeners.set(key, handler);
+    return this;
+  }
 }
 
 export default CanvasObject;

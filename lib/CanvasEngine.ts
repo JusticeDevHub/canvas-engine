@@ -1,199 +1,211 @@
-import getMousePosition from "../utils/getMousePosition.ts";
-import CanvasObject from "./CanvasObject.ts";
+// CanvasEngine.ts
+
+import CanvasObject from "./CanvasObject.js";
+
+interface MousePosition {
+  x: number;
+  y: number;
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
 
 /**
- * The `CanvasEngine` function acts as the central component of this library that bridges HTML5 and game development practices. It provides abstractions for working with HTML5
+ * Build game-like web applications with simple functions.
+ *
+ * Drop it into React, Vue, Svelte, or vanilla JS—it outputs regular DOM elements
+ * that work with your existing styling and state management. No canvas to learn,
+ * no special framework adapters needed.
  *
  * @example
- * ```ts
- * import CanvasEngine from "@web-dev-library/canvas-engine";
+ * const engine = new CanvasEngine("app", document);
+ * const player = engine.createObject("hero");
  *
- * const canvasEngine = new CanvasEngine("canvas-id", document);
- * const player = canvasEngine.createObject("player");
- * ```
+ * player.setImage("/avatar.png")
+ *       .setPosition(100, 100)
+ *       .onMouseClickThis((self) => self.setMoveToPosition(200, 200, 300));
  *
- * ```html
- * <html>
- *    <body>
- *       <div id="canvas-id" style={{ width: "100vw", height: "100vh" }}></div>
- *    </body>
- * </html>
- * ```
+ * @remarks
+ * Coordinate system: 0° points Up, +Y moves Up (clockwise rotation).
  */
 class CanvasEngine {
   #document: Document;
-  #camera: CanvasObject;
   #canvasId: string;
-  #canvas: HTMLElement | null = null;
-  #canvasObjects: { [id: string]: CanvasObject } = {};
-  #mousePosition: { x: number; y: number };
+  #container: HTMLElement;
+  #scene: HTMLElement;
+  #objects: Map<string, CanvasObject> = new Map();
+  #mouse: MousePosition = { x: 0, y: 0 };
+  #rafId: number = -1;
+  #camera: CanvasObject;
+  #lastTime: number = 0;
 
+  /**
+   * @param canvasId - ID of the HTML container element
+   * @param document - Usually 'window.document'
+   */
   constructor(canvasId: string, document: Document) {
     this.#document = document;
     this.#canvasId = canvasId;
 
-    const canvasItem = document.getElementById(canvasId);
-    if (canvasItem === null) {
-      alert(`No HTML Element with id ${canvasId} Found on CanvasEngine Init`);
-    }
+    const container = document.getElementById(canvasId);
+    if (!container) throw new Error(`No element with id "${canvasId}"`);
 
-    if (canvasItem) {
-      canvasItem.style.overflow = "hidden";
-      if (canvasItem.style.position === "") {
-        canvasItem.style.position = "relative";
-      }
-      this.#canvas = document.createElement("div") as HTMLElement;
-      this.#canvas.style.position = "absolute";
-      this.#canvas.style.width = "100%";
-      this.#canvas.style.height = "100%";
-      this.#canvas.style.left = "50%";
-      this.#canvas.style.top = "50%";
-      canvasItem.appendChild(this.#canvas);
-    }
+    this.#container = container;
+    container.style.overflow = "hidden";
+    container.style.position = container.style.position || "relative";
 
-    this.#camera = new CanvasObject(
-      `camera-${Math.random()}.replace("0.", "")`,
-      this.#document,
-      this,
-      this.#canvas,
-      false,
-      true
-    );
+    // Create the movable scene layer
+    this.#scene = document.createElement("div");
+    this.#scene.style.cssText =
+      "position:absolute;width:100%;height:100%;will-change:transform";
+    container.appendChild(this.#scene);
 
-    this.#document.addEventListener("mousemove", (e) => {
-      this.#mousePosition = getMousePosition(this, this.#document, e);
+    // Track mouse position relative to container
+    document.addEventListener("mousemove", (e: MouseEvent) => {
+      const rect = this.#container.getBoundingClientRect();
+      this.#mouse = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      };
     });
 
-    return this;
+    // Create camera (moves the whole scene)
+    this.#camera = new CanvasObject(
+      `cam-${Math.random().toString(36).slice(2)}`,
+      document,
+      this,
+      this.#scene,
+      false,
+      true,
+    );
+
+    this.#startLoop();
   }
 
-  createObject = (id: string): CanvasObject => {
-    const newCanvasObject = new CanvasObject(
+  #startLoop(): void {
+    const loop = (time: number) => {
+      const dt = (time - this.#lastTime) / 1000;
+      this.#lastTime = time;
+      this.#objects.forEach((obj) => obj.update(dt));
+      this.#rafId = requestAnimationFrame(loop);
+    };
+    this.#rafId = requestAnimationFrame(loop);
+  }
+
+  /**
+   * Add a new game object to the scene.
+   * @param id - Unique name (e.g., "player", "enemy-1")
+   * @returns The created object
+   */
+  createObject(id: string): CanvasObject {
+    if (this.#objects.has(id)) {
+      console.warn(`Object "${id}" already exists`);
+      return this.#objects.get(id)!;
+    }
+
+    const obj = new CanvasObject(
       id,
       this.#document,
       this,
-      this.#canvas,
+      this.#scene,
       false,
-      false
+      false,
     );
+    this.#objects.set(id, obj);
+    return obj;
+  }
 
-    if (this.#canvasObjects[id]) {
-      // TODO: Should only alert this in debug mode
-      alert(`CanvasObject with duplicate ids found: "${id}"`);
-    }
+  /** Get any object by its ID. */
+  getCanvasObject(id: string): CanvasObject | undefined {
+    return this.#objects.get(id);
+  }
 
-    this.#canvasObjects[id] = newCanvasObject;
-    return newCanvasObject;
-  };
-
-  getCanvasObject = (id: string): CanvasObject | null => {
-    return this.#canvasObjects[id] ?? null;
-  };
-
-  getCameraObject = (): CanvasObject => {
+  /** Get the camera object (move this to scroll the world). */
+  getCameraObject(): CanvasObject {
     return this.#camera;
-  };
+  }
 
-  getCanvasId = (): string => {
+  /** Get canvas container ID. */
+  getCanvasId(): string {
     return this.#canvasId;
-  };
+  }
 
+  /** Get mouse position relative to the game container. */
+  getMousePosition(): MousePosition {
+    return { ...this.#mouse };
+  }
+
+  /** @internal Called automatically when objects are destroyed. */
+  unregisterObject(id: string): void {
+    this.#objects.delete(id);
+  }
+
+  /**
+   * Math utilities.
+   * Angles: 0° = Up, 90° = Right, 180° = Down, 270° = Left.
+   */
   utils = {
+    /** Distance between two points. */
     getDistanceBetweenTwoPoints: (
       x1: number,
       y1: number,
       x2: number,
-      y2: number
-    ): number => {
-      return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
-    },
-    getAngleBetweenTwoPoints: (
-      fromX: number,
-      fromY: number,
-      toX: number,
-      toY: number
-    ): number => {
-      const deltaY = toX - fromX;
-      const deltaX = toY - fromY;
-      const angleInRadians = Math.atan2(deltaY, deltaX);
-      let angleInDegrees = angleInRadians * (180 / Math.PI);
-      if (angleInDegrees < 0) {
-        angleInDegrees += 360;
-      }
-      return angleInDegrees;
-    },
-    getMousePosition: (): { x: number; y: number } => {
-      return this.#mousePosition;
-    },
+      y2: number,
+    ): number => Math.hypot(x2 - x1, y2 - y1),
+
     /**
-     * Returns index of closest point to target point
-     * @param points number
-     * @param point number
-     * @returns
+     * Angle from point A to point B in degrees.
+     * Returns 0° for Up, 90° for Right.
      */
-    getClosestToPoint: (
-      points: { x: number; y: number }[],
-      point: { x: number; y: number }
-    ): number | null => {
-      let closestDistance = 0;
-      let closestIndex: null | number = null;
+    getAngleBetweenTwoPoints: (
+      x1: number,
+      y1: number,
+      x2: number,
+      y2: number,
+    ): number => {
+      const deg = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+      return (deg + 90 + 360) % 360;
+    },
 
-      points.forEach((obj, i) => {
-        const thisDistance = this.utils.getDistanceBetweenTwoPoints(
-          obj.x,
-          obj.y,
-          point.x,
-          point.y
-        );
+    /**
+     * Find closest point to target.
+     * @returns Index of closest point, or null if empty array.
+     */
+    getClosestToPoint: (points: Point[], target: Point): number | null => {
+      if (!points.length) return null;
+      let closest = 0;
+      let minDist = Infinity;
 
-        if (i === 0) {
-          closestIndex = i;
-          closestDistance = thisDistance;
-        } else {
-          if (thisDistance < closestDistance) {
-            closestIndex = i;
-            closestDistance = thisDistance;
-          }
+      points.forEach((p, i) => {
+        const d = Math.hypot(p.x - target.x, p.y - target.y);
+        if (d < minDist) {
+          minDist = d;
+          closest = i;
         }
       });
-
-      return closestIndex;
+      return closest;
     },
-    getPointDistancesInOrdered: (
-      points: { x: number; y: number }[],
-      point: { x: number; y: number }
-    ): number[] => {
-      const distances: { index: number; distance: number }[] = [];
 
-      points.forEach((p, index) => {
-        distances.push({
-          index,
-          distance: this.utils.getDistanceBetweenTwoPoints(
-            p.x,
-            p.y,
-            point.x,
-            point.y
-          ),
-        });
-      });
-
-      distances.sort((a, b) => {
-        return b.distance - a.distance;
-      });
-
-      return distances
-        .map((d) => {
-          return d.index;
-        })
-        .reverse();
-    },
+    /**
+     * Get indices sorted by distance (closest first).
+     * @returns Array of indices [0, 2, 1] etc.
+     */
+    getPointDistancesInOrdered: (points: Point[], target: Point): number[] =>
+      points
+        .map((p, i) => ({ i, d: Math.hypot(p.x - target.x, p.y - target.y) }))
+        .sort((a, b) => a.d - b.d)
+        .map((x) => x.i),
   };
 
-  destroy = (): void => {
-    this.#document.removeEventListener("mousemove", () => null);
-    this.#canvasObjects = {};
-    this.#canvas?.remove();
-  };
+  /** Stop the engine and remove all objects. */
+  destroy(): void {
+    if (this.#rafId >= 0) cancelAnimationFrame(this.#rafId);
+    this.#objects.forEach((obj) => obj.destroy());
+    this.#objects.clear();
+    this.#scene.remove();
+  }
 }
 
 export default CanvasEngine;
